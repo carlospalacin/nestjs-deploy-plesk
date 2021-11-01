@@ -44,6 +44,11 @@ jobs:
         shell: bash
         env:
           DOT_ENV: ${{secrets.DOT_ENV}}
+      - name: Create file to restart application
+        run: |
+          mkdir tmp
+          touch tmp/restart.txt
+        shell: bash
       - name: Build project node
         run: npm run build
       - name: Deploy
