@@ -1,75 +1,49 @@
-name: ci/cd NestJs project on plesk
+name: Build and Deploy Plesk Onyx
 
 on:
   push:
     branches:
       - master
-
 jobs:
   tests:
+    name: Build and test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [7.3, 7.4]
-
-    name: Test - PHP ${{ matrix.php }}
-
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Cache PHP dependencies
-        uses: actions/cache@v1
+      - name: Install node
+        uses: actions/setup-node@v2
         with:
-          path: vendor
-          key: dependencies-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd
-          coverage: none
-
-      - name: Copy ENV Laravel Configuration for CI
-        run: php -r "file_exists('.env') || copy('.env.ci', '.env');"
-
+          node-version: '16'
       - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Execute tests
-        run: vendor/bin/phpunit --verbose
+        run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Unit testing
+        run: npm run test
+      - name: Acceptance testing
+        run: npm run test:e2e
 
   deploy:
-    runs-on: ubuntu-latest
+    name: Plesk Onyx Deploy
     needs: tests
-    if: github.ref == 'refs/heads/envs/production'
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Cache PHP dependencies
-        uses: actions/cache@v1
+      - name: Install node
+        uses: actions/setup-node@v2
         with:
-          path: vendor
-          key: dependencies-php-composer-${{ hashFiles('**/composer.lock') }}
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 7.3
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, gd
-          coverage: none
-
+          node-version: '16'
       - name: Install dependencies
-        run: composer install --no-ansi --no-interaction --no-scripts --no-suggest --no-progress --prefer-dist
-
-      #- name: Copy dotenv file
-      #  run: php -r "file_put_contents(__DIR__ . '/.env', '${{ secrets.DOT_ENV }}');"
-
+        run: npm install
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "$DOT_ENV" > .env
+        shell: bash
+        env:
+          DOT_ENV: ${{secrets.DOT_ENV}}
       - name: Deploy
         uses: AEnterprise/rsync-deploy@v1.0
         env:
@@ -79,4 +53,4 @@ jobs:
           FOLDER: "./"
           SERVER_IP: ${{ secrets.HOST }}
           USERNAME: ${{ secrets.USERNAME }}
-          SERVER_DESTINATION: "/var/www/vhosts/dyscar.com/httpdocs"
+          SERVER_DESTINATION: "/var/www/vhosts/nestjs.beopen.com/httpdocs"
