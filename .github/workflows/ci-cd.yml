@@ -53,4 +53,4 @@ jobs:
           FOLDER: "./"
           SERVER_IP: ${{ secrets.HOST }}
           USERNAME: ${{ secrets.USERNAME }}
-          SERVER_DESTINATION: "/var/www/vhosts/nestjs.beopen.com/httpdocs"
+          SERVER_DESTINATION: "/var/www/vhosts/nestjs.beopen.cloud/httpdocs"
